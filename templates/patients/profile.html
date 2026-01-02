@@ -1,0 +1,250 @@
+{% extends "base.html" %}
+{% load static %}
+<link
+  rel="stylesheet"
+  href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+
+{% block content %}
+
+<style>
+/* ---------- Animations ---------- */
+.fade-in {
+    animation: fadeIn 0.8s ease-in;
+}
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(15px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* ---------- Profile Image ---------- */
+.profile-img {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 4px solid #0d6efd;
+}
+
+/* ---------- Card ---------- */
+.profile-card {
+    border: none;
+    border-radius: 12px;
+    box-shadow: 0 6px 18px rgba(0,0,0,0.08);
+}
+
+.profile-label {
+    font-weight: 600;
+    color: #444;
+}
+</style>
+
+<div class="container my-5 fade-in">
+
+    <!-- ========== HEADER ========== -->
+    <div class="card profile-card text-center p-4 mb-4">
+        {% if patient.profile_image %}
+            <img src="{{ patient.profile_image.url }}"
+                 class="profile-img mx-auto mb-3">
+        {% else %}
+            <img src="https://via.placeholder.com/120"
+                 class="profile-img mx-auto mb-3">
+        {% endif %}
+
+        <h4 class="fw-bold text-primary">
+            {{ request.user.username }}
+        </h4>
+        <p class="text-muted mb-0">
+            {{ request.user.location_name|default:"Location not set" }}
+        </p>
+    </div>
+
+    <!-- ========== PROFILE FORM ========== -->
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+
+        <!-- ===== BASIC INFORMATION ===== -->
+        <div class="card profile-card mb-4 p-4">
+            <h5 class="mb-3 text-primary">Basic Information</h5>
+
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <label class="profile-label">Phone Number *</label>
+                    <input type="text" name="phone_number"
+                           class="form-control"
+                           value="{{ patient.phone_number }}"
+                           readonly>
+                </div>
+
+                <div class="col-md-6">
+                    <label class="profile-label">Age *</label>
+                    <input type="number" name="age"
+                           class="form-control"
+                           value="{{ patient.age }}"
+                           readonly>
+                </div>
+
+                <div class="col-md-6">
+                    <label class="profile-label">Gender</label>
+                    <input type="text"
+                           class="form-control"
+                           value="{{ patient.gender }}"
+                           readonly>
+                </div>
+
+                <div class="col-md-6">
+                    <label class="profile-label">Blood Group</label>
+                    <input type="text"
+                           class="form-control"
+                           value="{{ patient.blood_group }}"
+                           readonly>
+                </div>
+
+                <div class="col-md-6">
+                    <label class="profile-label">Email</label>
+                    <input type="email"
+                           class="form-control"
+                           value="{{ request.user.email }}"
+                           readonly>
+                </div>
+            </div>
+        </div>
+
+        <!-- ===== ADDRESS & LOCATION ===== -->
+        <div class="card profile-card mb-4 p-4">
+            <h5 class="mb-3 text-primary">Address & Location</h5>
+
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <label class="profile-label">Address</label>
+                    <textarea name="address"
+                              class="form-control"
+                              rows="3"
+                              readonly>{{ patient.address }}</textarea>
+
+                    <label class="profile-label mt-3">Location</label>
+                    <input type="text"
+                           class="form-control"
+                           value="{{ request.user.location_name }}"
+                           readonly>
+                </div>
+
+                <div class="col-md-6">
+                    <!-- Map placeholder -->
+                    <div id="map" class="rounded" style="height: 230px;"></div>
+
+<input type="hidden" name="latitude" id="latitude"
+       value="{{ request.user.latitude }}">
+<input type="hidden" name="longitude" id="longitude"
+       value="{{ request.user.longitude }}">
+
+                </div>
+            </div>
+        </div>
+
+        <!-- ===== ADDITIONAL DETAILS ===== -->
+        <div class="card profile-card mb-4 p-4">
+            <h5 class="mb-3 text-primary">Additional Information</h5>
+
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <label class="profile-label">Emergency Contact</label>
+                    <input type="text" name="emergency_contact"
+                           class="form-control"
+                           value="{{ patient.emergency_contact }}"
+                           readonly>
+                </div>
+
+                <div class="col-12">
+                    <label class="profile-label">Notes</label>
+                    <textarea name="description"
+                              class="form-control"
+                              rows="3"
+                              readonly>{{ patient.description }}</textarea>
+                </div>
+            </div>
+        </div>
+
+        <!-- ===== PROFILE IMAGE ===== -->
+        <div class="card profile-card mb-4 p-4">
+            <h5 class="mb-3 text-primary">Profile Picture</h5>
+            <input type="file"
+                   name="profile_image"
+                   class="form-control"
+                   disabled>
+        </div>
+
+        <!-- ===== ACTION BUTTON ===== -->
+        <div class="text-center">
+            <button type="button"
+                    class="btn btn-outline-primary px-5"
+                    id="editBtn">
+                ✏️ Edit Profile
+            </button>
+
+            <button type="submit"
+                    class="btn btn-primary px-5 d-none"
+                    id="saveBtn">
+                💾 Update Profile
+            </button>
+        </div>
+
+    </form>
+
+</div>
+<script>
+const editBtn = document.getElementById("editBtn");
+const saveBtn = document.getElementById("saveBtn");
+
+// Enable all editable inputs (except email)
+const inputs = document.querySelectorAll(
+    "input:not([type='email']), textarea"
+);
+
+editBtn.addEventListener("click", () => {
+    inputs.forEach(input => {
+        input.removeAttribute("readonly");
+        input.removeAttribute("disabled");
+    });
+
+    editBtn.classList.add("d-none");
+    saveBtn.classList.remove("d-none");
+});
+</script>
+<script>
+let lat = "{{ request.user.latitude|default_if_none:'' }}";
+let lng = "{{ request.user.longitude|default_if_none:'' }}";
+
+// Fallback (Hyderabad) if location not set
+lat = lat ? parseFloat(lat) : 17.3850;
+lng = lng ? parseFloat(lng) : 78.4867;
+
+const map = L.map('map').setView([lat, lng], 13);
+
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '© OpenStreetMap'
+}).addTo(map);
+
+let marker = L.marker([lat, lng], { draggable: true }).addTo(map);
+
+function updateLocation(pos) {
+    document.getElementById("latitude").value = pos.lat;
+    document.getElementById("longitude").value = pos.lng;
+}
+
+// Marker drag
+marker.on('dragend', function (e) {
+    updateLocation(e.target.getLatLng());
+});
+
+// Map click
+map.on('click', function (e) {
+    marker.setLatLng(e.latlng);
+    updateLocation(e.latlng);
+});
+</script>
+
+
+{% endblock %}
