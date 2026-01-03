@@ -20,6 +20,10 @@ SECRET_KEY = 'django-insecure-dev-key-change-in-production-123456789'
 DEBUG = True
 
 ALLOWED_HOSTS = ['*']
+CSRF_TRUSTED_ORIGINS = [
+    "https://lifelink-2lsp.onrender.com"
+]
+
 
 
 # Application definition
