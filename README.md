@@ -191,9 +191,9 @@ life_link/
 
 ## License
 
-This project is developed for academic purposes.
+This project is developed for academic purposes Developed By 5C8 and Team.
 
 ## Author
 
-Developed as a final-year academic project demonstrating Django full-stack development capabilities.
+Developed By Jayavardhan Yerubandi❤️
 
