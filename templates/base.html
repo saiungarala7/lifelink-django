@@ -77,15 +77,32 @@
                 <!-- Role Dashboards -->
                 {% if user.is_donor %}
                     <li class="nav-item">
-                        <a class="nav-link" href="{% url 'donors:dashboard' %}">Dashboard</a>
+                        <a class="nav-link" href="{% url 'donors:dashboard' %}">
+                            <i class="bi bi-speedometer2"></i> Dashboard
+                        </a>
                     </li>
+
+                    {% if donor_has_rewards %}
+<li class="nav-item">
+    <a class="nav-link text-warning fw-semibold"
+       href="{% url 'donors:rewards' %}">
+        <i class="bi bi-gift-fill"></i> Rewards
+    </a>
+</li>
+{% endif %}
+
                 {% elif user.is_bloodbank %}
                     <li class="nav-item">
-                        <a class="nav-link" href="{% url 'bloodbanks:dashboard' %}">Dashboard</a>
+                        <a class="nav-link" href="{% url 'bloodbanks:dashboard' %}">
+                            <i class="bi bi-speedometer2"></i> Dashboard
+                        </a>
                     </li>
+
                 {% elif user.is_patient %}
                     <li class="nav-item">
-                        <a class="nav-link" href="{% url 'patients:dashboard' %}">Dashboard</a>
+                        <a class="nav-link" href="{% url 'patients:dashboard' %}">
+                            <i class="bi bi-speedometer2"></i> Dashboard
+                        </a>
                     </li>
                 {% endif %}
 
@@ -119,13 +136,14 @@
 
                         <!-- DONOR -->
                         {% elif user.is_donor %}
-                            {% if user.donor_profile.profile_image %}
+                        
+                            <!-- {% if user.donor_profile.profile_image %}
                                 <img src="{{ user.donor_profile.profile_image.url }}"
                                      class="nav-profile-img me-2">
                             {% else %}
                                 <img src="https://via.placeholder.com/36"
                                      class="nav-profile-img me-2">
-                            {% endif %}
+                            {% endif %} -->
 
                         {% else %}
                             <i class="bi bi-person-circle fs-4 me-2"></i>
@@ -151,8 +169,6 @@
                                 </a>
                             </li>
                             <li><hr class="dropdown-divider"></li>
-
-                        
                         {% endif %}
 
                         <li>

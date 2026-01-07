@@ -50,6 +50,7 @@ def dashboard(request):
         'recent_donations': recent_donations,
         'eligible': eligible,
         'eligibility_message': eligibility_message,
+        'hide_nav_profile': True, 
     }
 
     return render(request, 'donors/dashboard.html', context)
@@ -308,6 +309,7 @@ def schedule_donation(request):
         request,
         'donors/schedule_donation.html',
         context
+        
     )
 
 @donor_required
@@ -332,4 +334,35 @@ def cancel_donation(request, schedule_id):
 """
 Donor views: Dashboard, Profile, Scheduling
 """
+from django.contrib.auth.decorators import login_required
+from accounts.decorators import role_required
+from donors.models import DonationReward
+
+
+@login_required
+@role_required('donor')
+def rewards(request):
+    """
+    Show rewards for donor (completed donations only)
+    """
+
+    donor_profile = request.user.donor_profile
+    rewards = DonationReward.objects.filter(
+        donor=donor_profile
+    ).order_by('-created_at')
+
+    # If no rewards, block access
+    if not rewards.exists():
+        return render(
+            request,
+            'donors/no_rewards.html'
+        )
+
+    return render(
+        request,
+        'donors/rewards.html',
+        {
+            'rewards': rewards
+        }
+    )
 

@@ -1,0 +1,227 @@
+{% extends 'base.html' %}
+
+{% block title %}My Rewards | LifeLink{% endblock %}
+<style>
+#confetti-container {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    overflow: hidden;
+}
+
+.confetti {
+    position: absolute;
+    width: 8px;
+    height: 12px;
+    background-color: red;
+    opacity: 0.9;
+    animation: confetti-fall 1.5s ease-out forwards;
+}
+
+@keyframes confetti-fall {
+    0% {
+        transform: translateY(0) rotate(0deg);
+        opacity: 1;
+    }
+    100% {
+        transform: translateY(-150px) rotate(360deg);
+        opacity: 0;
+    }
+}
+</style>
+
+
+{% block content %}
+<div class="container">
+    <h3 class="mb-4 text-center text-danger">
+        🎁 My Donation Rewards
+    </h3>
+
+    <div class="row justify-content-center">
+        {% for reward in rewards %}
+        <div class="col-md-6 mb-4">
+            <div class="card border-warning shadow-sm">
+                <div class="card-body text-center">
+                    <h5 class="card-title text-success">
+                        Reward Unlocked!
+                    </h5>
+
+                    <p class="card-text">
+                        {{ reward.description }}
+                    </p>
+
+                    <small class="text-muted">
+                        Earned on {{ reward.created_at|date:"d M Y" }}
+                    </small>
+
+                    <div class="mt-3">
+                      <button class="btn btn-warning btn-sm fw-semibold"
+        onclick="openScratch('{{ reward.voucher_code }}')">
+    Scratch to Reveal 🎁
+</button>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+<!-- Scratch Card Modal -->
+<div id="scratchModal"
+     class="position-fixed top-0 start-0 w-100 h-100 d-none"
+     style="background:rgba(0,0,0,0.6); z-index:1050;">
+
+    <div class="d-flex justify-content-center align-items-center h-100">
+        <div class="bg-white p-4 rounded shadow text-center"
+             style="width:320px;">
+
+            <h5 class="text-danger mb-3">🎁 Scratch Your Reward</h5>
+
+            <div class="position-relative mx-auto"
+                 style="width:260px; height:80px;">
+
+                <!-- Voucher text -->
+                <div id="voucherText"
+                     class="position-absolute w-100 h-100 d-flex align-items-center justify-content-center fw-bold text-success fs-5">
+                    ****-****
+                </div>
+
+                <!-- Scratch canvas -->
+                <canvas id="scratchCanvas"
+                        width="260"
+                        height="80"
+                        class="position-absolute top-0 start-0">
+                </canvas>
+                <div id="confetti-container"></div>
+
+            </div>
+
+            <button class="btn btn-sm btn-secondary mt-3"
+                    onclick="closeScratch()">
+                Close
+            </button>
+        </div>
+    </div>
+</div>
+{% block extra_js %}
+<script>
+let canvas, ctx;
+let isDrawing = false;
+let revealedCode = '';
+
+function openScratch(code) {
+    revealedCode = code;
+
+    document.getElementById('voucherText').innerText = code;
+    document.getElementById('scratchModal').classList.remove('d-none');
+
+    canvas = document.getElementById('scratchCanvas');
+    ctx = canvas.getContext('2d');
+
+    // Cover layer
+    //ctx.fillStyle = '#cccccc';
+    //ctx.fillRect(0, 0, canvas.width, canvas.height);
+    // Create colorful foil-like scratch layer
+let gradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
+gradient.addColorStop(0, '#ff4d4d');
+gradient.addColorStop(0.25, '#ffd633');
+gradient.addColorStop(0.5, '#4dd2ff');
+gradient.addColorStop(0.75, '#b84dff');
+gradient.addColorStop(1, '#ff944d');
+
+ctx.fillStyle = gradient;
+ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+// Add foil shine
+ctx.globalAlpha = 0.85;
+ctx.fillStyle = 'rgba(255,255,255,0.25)';
+for (let i = 0; i < 6; i++) {
+    ctx.fillRect(
+        Math.random() * canvas.width,
+        Math.random() * canvas.height,
+        40,
+        10
+    );
+}
+ctx.globalAlpha = 1;
+
+
+    ctx.globalCompositeOperation = 'destination-out';
+
+    canvas.addEventListener('mousedown', startScratch);
+    canvas.addEventListener('mousemove', scratch);
+    canvas.addEventListener('mouseup', stopScratch);
+    canvas.addEventListener('mouseleave', stopScratch);
+
+    // Mobile support
+    canvas.addEventListener('touchstart', startScratch);
+    canvas.addEventListener('touchmove', scratch);
+    canvas.addEventListener('touchend', stopScratch);
+}
+
+function closeScratch() {
+    document.getElementById('scratchModal').classList.add('d-none');
+}
+
+function startScratch(e) {
+    isDrawing = true;
+    scratch(e);
+}
+
+function stopScratch() {
+    isDrawing = false;
+}
+
+function scratch(e) {
+    if (!isDrawing) return;
+
+    const rect = canvas.getBoundingClientRect();
+    let x, y;
+
+    if (e.touches) {
+        x = e.touches[0].clientX - rect.left;
+        y = e.touches[0].clientY - rect.top;
+    } else {
+        x = e.clientX - rect.left;
+        y = e.clientY - rect.top;
+    }
+
+    ctx.beginPath();
+    ctx.arc(x, y, 15, 0, Math.PI * 2);
+    ctx.fill();
+    checkScratchCompletion();
+
+}
+function checkScratchCompletion() {
+    if (scratchComplete) return;
+
+    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    let cleared = 0;
+
+    for (let i = 3; i < imageData.data.length; i += 4) {
+        if (imageData.data[i] === 0) {
+            cleared++;
+        }
+    }
+
+    const percent = cleared / (canvas.width * canvas.height) * 100;
+
+    if (percent > 60) {
+        scratchComplete = true;
+
+        // Smoothly fade remaining foil
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        // NEXT STEP: confetti will trigger here
+        triggerConfetti();
+    }
+}
+
+</script>
+{% endblock %}
+
+{% endblock %}

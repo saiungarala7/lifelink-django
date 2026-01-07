@@ -54,13 +54,70 @@
                         </div>
                     </div>
 
+
+
+
+
+
                     <div class="mb-3">
-                        <label for="id_email" class="form-label">Email</label>
-                        {{ form.email }}
-                        {% if form.email.errors %}
-                            <div class="text-danger">{{ form.email.errors }}</div>
-                        {% endif %}
-                    </div>
+    <label for="id_email" class="form-label">
+        Email <span class="text-danger">*</span>
+    </label>
+
+    <div class="input-group">
+        {{ form.email }}
+
+        <button type="button"
+                class="btn btn-outline-primary"
+                id="sendOtpBtn">
+            Send OTP
+        </button>
+    </div>
+
+    {% if form.email.errors %}
+        <div class="text-danger">
+            {{ form.email.errors }}
+        </div>
+    {% endif %}
+
+    <small id="otpStatus" class="text-muted"></small>
+</div>
+
+<div class="mb-3">
+    <label class="form-label">
+        Enter OTP <span class="text-danger">*</span>
+    </label>
+
+    <input type="text"
+           name="otp"
+           id="otp"
+           class="form-control"
+           placeholder="Enter 6-digit OTP"
+           maxlength="6"
+           disabled
+           required>
+</div>
+
+
+
+<button type="button"
+        id="verifyOtpBtn"
+        class="btn btn-success mt-2"
+        disabled>
+    Verify OTP
+</button>
+
+
+<input type="hidden" id="otpVerified" value="false">
+
+
+
+
+
+
+
+
+
 
                     <div class="mb-3">
                         <label for="id_password1" class="form-label">Password</label>
@@ -122,9 +179,13 @@
 
 
                     <div class="d-grid">
-                        <button type="submit" class="btn btn-danger btn-lg">
-                            <i class="bi bi-person-plus"></i> Register
-                        </button>
+                        <button type="submit"
+        id="registerBtn"
+        class="btn btn-danger w-100"
+        disabled>
+    Register
+</button>
+
                     </div>
                 </form>
 
@@ -253,6 +314,98 @@ map.on('click', function (e) {
     document.getElementById('longitude').value = lon;
 });
 </script>
+
+
+
+
+
+
+<script>
+/* SEND OTP */
+document.getElementById('sendOtpBtn').addEventListener('click', function () {
+
+    const email = document.getElementById('id_email').value;
+    const status = document.getElementById('otpStatus');
+    const otpInput = document.getElementById('otp');
+    const verifyBtn = document.getElementById('verifyOtpBtn');
+    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
+    if (!email) {
+        status.innerText = "Please enter email first";
+        status.className = "text-danger";
+        return;
+    }
+
+    status.innerText = "Sending OTP...";
+    status.className = "text-info";
+
+    fetch("{% url 'accounts:send_otp' %}", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/x-www-form-urlencoded",
+            "X-CSRFToken": csrfToken
+        },
+        body: `email=${email}`
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            status.innerText = "OTP sent to your email ✔";
+            status.className = "text-success";
+
+            otpInput.disabled = false;
+            verifyBtn.disabled = false;   // ✅ ENABLE VERIFY OTP
+        } else {
+            status.innerText = data.message;
+            status.className = "text-danger";
+        }
+    })
+    .catch(() => {
+        status.innerText = "OTP sending failed";
+        status.className = "text-danger";
+    });
+});
+
+
+/* VERIFY OTP */
+document.getElementById('verifyOtpBtn').addEventListener('click', function () {
+
+    const email = document.getElementById('id_email').value;
+    const otp = document.getElementById('otp').value;
+    const status = document.getElementById('otpStatus');
+    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+    const registerBtn = document.getElementById('registerBtn');
+
+    if (!otp) {
+        status.innerText = "Please enter OTP";
+        status.className = "text-danger";
+        return;
+    }
+
+    fetch("{% url 'accounts:verify_otp' %}", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/x-www-form-urlencoded",
+            "X-CSRFToken": csrfToken
+        },
+        body: `email=${email}&otp=${otp}`
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            status.innerText = "OTP verified ✔";
+            status.className = "text-success";
+            registerBtn.disabled = false;  // ✅ ENABLE REGISTER
+        } else {
+            status.innerText = data.message;
+            status.className = "text-danger";
+        }
+    });
+});
+</script>
+
+
+
 
 
 

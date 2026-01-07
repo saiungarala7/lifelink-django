@@ -12,6 +12,8 @@ urlpatterns = [
     path('toggle-availability/', views.toggle_availability, name='toggle_availability'),
     path('schedule/', views.schedule_donation, name='schedule_donation'),
     path('cancel/<int:schedule_id>/', views.cancel_donation, name='cancel_donation'),
+    path('rewards/', views.rewards, name='rewards'),
+
      
 ]
 

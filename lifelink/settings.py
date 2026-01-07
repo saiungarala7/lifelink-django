@@ -67,6 +67,8 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'donors.context_processors.donor_rewards_status',
+
             ],
         },
     },
@@ -148,4 +150,18 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 # Login URLs
 LOGIN_URL = 'accounts:login'
 LOGIN_REDIRECT_URL = 'accounts:login_redirect'
+# ================================
+# EMAIL CONFIGURATION (GMAIL SMTP)
+# ================================
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+
+EMAIL_HOST_USER = '22221a05a9@gmail.com'
+EMAIL_HOST_PASSWORD = 'tpwlwrcszcgusfua'
+
+DEFAULT_FROM_EMAIL = 'LifeLink <22221a05a9@gmail.com>'
+
+
 

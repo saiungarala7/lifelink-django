@@ -12,5 +12,11 @@ urlpatterns = [
     path('register/', views.user_register, name='register'),
     path('logout/', views.user_logout, name='logout'),
     path('redirect/', views.login_redirect, name='login_redirect'),
+    path('send-otp/', views.send_otp, name='send_otp'), 
+    path('verify-otp/', views.verify_otp, name='verify_otp'),
+
+
+   
+
 ]
 
